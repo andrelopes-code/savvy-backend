@@ -16,6 +16,7 @@ loguru = "^0.7.2"
 sqlalchemy = "^2.0.31"
 asyncpg = "^0.29.0"
 dynaconf = "^3.2.5"
+alembic = "^1.13.1"
 
 
 [tool.poetry.group.dev.dependencies]
