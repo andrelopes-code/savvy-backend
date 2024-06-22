@@ -1,0 +1,15 @@
+services:
+  db:
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${SAVVY_POSTGRES_USER} # from .env
+      POSTGRES_PASSWORD: ${SAVVY_POSTGRES_PASSWORD} # from .env
+      DATABASE_PASSWORD: ${SAVVY_DATABASE_PASSWORD} # from .env
+      POSTGRES_DBS: savvy, savvy_test
+    volumes:
+      - $HOME/.postgres/savvy/data/postgresql:/var/lib/postgresql/data
