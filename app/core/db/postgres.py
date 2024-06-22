@@ -1,6 +1,3 @@
-from typing import Annotated
-
-from fastapi import Depends
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -27,7 +24,3 @@ async def get_db():
     """This function is used to get a database session in an async context"""
     async with async_session() as s:
         yield s
-
-
-# A FastAPI dependency that gets the database session in an async context
-AsyncDBSessionDepends = Annotated[AsyncSession, Depends(get_db)]
