@@ -169,7 +169,6 @@ class AsyncCRUDRepositoryWithEmail[T](AsyncCRUDRepository[T]):
         if stmt is None:
             stmt = select(self.model).where(self.model.email == email)
 
-        stmt = stmt.filter(~self.model.is_deleted)
         instance = await self.session.scalar(stmt)
         return instance
 
@@ -185,8 +184,6 @@ class AsyncCRUDRepositoryWithEmail[T](AsyncCRUDRepository[T]):
         if not instance:
             return None
 
-        instance.is_deleted = True
-
-        self.session.add(instance)
+        await self.session.delete(instance)
         await self.session.commit()
         return instance
