@@ -1,6 +1,10 @@
-from argon2 import PasswordHasher
+from datetime import datetime, timedelta, timezone
 
-from app.core import settings
+import jwt
+from argon2 import PasswordHasher
+from argon2 import exceptions as argon2_exceptions
+
+from app.core import exc, log, settings
 
 ALGORITHM = settings.security.algorithm
 SECRET = settings.secret_key
@@ -12,23 +16,88 @@ PWD_CONTEXT = PasswordHasher()
 
 class SecurityService:
     @staticmethod
-    def _create_token(to_encode: dict) -> str: ...
+    def create_access_token(data_to_encode: dict) -> str:
+        """Creates an access token with the data
+
+        Args:
+            data_to_encode (dict): data to encode in jwt token
+
+        Returns:
+            str: the encoded token
+        """
+        expires = datetime.now(timezone.utc) + timedelta(
+            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+        data_to_encode.update({'exp': expires, 'type': 'access'})
+        encoded_jwt = SecurityService._create_token(data_to_encode)
+        return encoded_jwt
 
     @staticmethod
-    def create_access_token(data_to_encode: dict) -> str: ...
+    def create_refresh_token(data_to_encode: dict) -> str:
+        """Creates an refresh token with the data
+
+        Args:
+            data_to_encode (dict): data to encode in jwt token
+
+        Returns:
+            str: the encoded token
+        """
+        expires = datetime.now(timezone.utc) + timedelta(
+            minutes=REFRESH_TOKEN_EXPIRE_MINUTES
+        )
+        data_to_encode.update({'exp': expires, 'type': 'refresh'})
+        encoded_jwt = SecurityService._create_token(data_to_encode)
+        return encoded_jwt
 
     @staticmethod
-    def create_refresh_token(data_to_encode: dict) -> str: ...
+    def verify_token(token: str) -> dict:
+        """Verifies if the token is valid
+
+        Args:
+            token (str): The token to be verified
+
+        Raises:
+            exc.UnauthorizedException: if the token is not valid
+
+        Returns:
+            dict: The decoded token
+        """
+        try:
+            data = jwt.decode(jwt=token, key=SECRET, algorithms=[ALGORITHM])
+            return data
+        except jwt.DecodeError:
+            raise exc.UnauthorizedException()
 
     @staticmethod
-    def verify_token(token: str) -> dict: ...
+    def _create_token(to_encode: dict) -> str:
+        try:
+            encoded = jwt.encode(
+                payload=to_encode,
+                algorithm=ALGORITHM,
+                key=SECRET,
+            )
+            return encoded
+        except Exception:
+            log.error('Error encoding jwt token')
+            raise
 
     @staticmethod
     def get_password_hash(plain_password: str) -> str:
-        hashed_password = PWD_CONTEXT.hash(plain_password)
-        return hashed_password
+        try:
+            hashed_password = PWD_CONTEXT.hash(plain_password)
+            return hashed_password
+        except argon2_exceptions.HashingError:
+            log.error('Error hashing password in get_password_hash')
+            raise exc.InternalServerErrorException()
 
     @staticmethod
     def verify_password(password: str, hash: str) -> bool:
-        is_valid = PWD_CONTEXT.verify(password=password, hash=hash)
-        return is_valid
+        try:
+            is_valid = PWD_CONTEXT.verify(password=password, hash=hash)
+            return is_valid
+        except (
+            argon2_exceptions.InvalidHashError,
+            argon2_exceptions.VerificationError,
+            argon2_exceptions.VerifyMismatchError,
+        ):
+            return False
