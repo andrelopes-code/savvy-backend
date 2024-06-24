@@ -1,11 +1,16 @@
 from datetime import datetime, timedelta, timezone
+from typing import Annotated
 
 import jwt
 from argon2 import PasswordHasher
 from argon2 import exceptions as argon2_exceptions
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
 
 from app.core import exc, log, settings
+from app.core.db.postgres import async_session
 
+auth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/token')
 ALGORITHM = settings.security.algorithm
 SECRET = settings.secret_key
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.security.access_token_expire_minutes
@@ -22,15 +27,22 @@ class SecurityService:
         Args:
             data_to_encode (dict): data to encode in jwt token
 
+        Raises:
+            exc.InternalServerErrorException: Error creating access jwt token
+
         Returns:
             str: the encoded token
         """
-        expires = datetime.now(timezone.utc) + timedelta(
-            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-        data_to_encode.update({'exp': expires, 'type': 'access'})
-        encoded_jwt = SecurityService._create_token(data_to_encode)
-        return encoded_jwt
+        try:
+            expires = datetime.now(timezone.utc) + timedelta(
+                minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+            )
+            data_to_encode.update({'exp': expires, 'type': 'access'})
+            encoded_jwt = SecurityService._create_token(data_to_encode)
+            return encoded_jwt
+        except Exception:
+            log.error('Error creating access jwt token')
+            raise exc.InternalServerErrorException()
 
     @staticmethod
     def create_refresh_token(data_to_encode: dict) -> str:
@@ -39,15 +51,22 @@ class SecurityService:
         Args:
             data_to_encode (dict): data to encode in jwt token
 
+        Raises:
+            exc.InternalServerErrorException: Error creating refresh jwt token
+
         Returns:
             str: the encoded token
         """
-        expires = datetime.now(timezone.utc) + timedelta(
-            minutes=REFRESH_TOKEN_EXPIRE_MINUTES
-        )
-        data_to_encode.update({'exp': expires, 'type': 'refresh'})
-        encoded_jwt = SecurityService._create_token(data_to_encode)
-        return encoded_jwt
+        try:
+            expires = datetime.now(timezone.utc) + timedelta(
+                minutes=REFRESH_TOKEN_EXPIRE_MINUTES
+            )
+            data_to_encode.update({'exp': expires, 'type': 'refresh'})
+            encoded_jwt = SecurityService._create_token(data_to_encode)
+            return encoded_jwt
+        except Exception:
+            log.error('Error creating refresh jwt token')
+            raise exc.InternalServerErrorException()
 
     @staticmethod
     def verify_token(token: str) -> dict:
@@ -101,3 +120,21 @@ class SecurityService:
             argon2_exceptions.VerifyMismatchError,
         ):
             return False
+
+
+def get_current_user(token: Annotated[str, Depends(auth2_scheme)]):
+    """Dependency that gets the current user from the token"""
+    user = SecurityService.verify_token(token)
+    return user
+
+
+async def get_db_user(user: Annotated[dict, Depends(get_current_user)]):
+    """Dependency that gets the current user from the database"""
+    models = __import__('app.models.user', fromlist=['user'])
+
+    async with async_session() as session:
+        db_user = await session.get(models.User, user['sub'])
+        if not db_user:
+            raise exc.UnauthorizedException()
+
+    return user
