@@ -31,9 +31,6 @@ class UserService:
             raise exc.UnauthorizedException('You cannot update this user')
 
         updated_user = await self.repository.update(current_user, data)
-        if not updated_user:
-            raise exc.NotFoundException('User not found')
-
         return updated_user
 
     async def delete_user(self, user_id: int, current_user: User) -> User:
