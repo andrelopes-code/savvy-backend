@@ -53,7 +53,7 @@ def test_password_hashing():
 
 def test_password_hashing_fail():
     password = 'Password123'
-    hash = SecurityService.get_password_hash(password)
-    assert len(hash) > 0
-    assert not SecurityService.verify_password('WrongPassword', hash)
+    hashed = SecurityService.get_password_hash(password)
+    assert len(hashed) > 0
+    assert not SecurityService.verify_password('WrongPassword', hashed)
     assert not SecurityService.verify_password(password, 'WrongHash')

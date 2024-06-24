@@ -1,0 +1,4 @@
+[report]
+exclude_lines =
+    except Exception
+    except argon2_exceptions.HashingError

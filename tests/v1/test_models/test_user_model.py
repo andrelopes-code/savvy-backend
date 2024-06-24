@@ -41,6 +41,8 @@ async def test_user_model_field_updated_at_is_updating(session):
     assert user.id
     assert user.updated_at != old_updated_at
 
+    assert user.verify_password('Password123')
+
 
 @pytest.mark.asyncio()
 async def test_user_password_field_is_hashed(session):

@@ -1,20 +1,14 @@
 import pytest_asyncio
-from sqlalchemy import NullPool, text
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy import NullPool
 
 from app.core.db.postgres import (
     DATABASE_URI,
     AsyncSession,
     create_async_engine,
+    get_db,
 )
-
-
-async def truncate_all_tables(session):
-    models = [
-        'users',
-    ]
-    for model in models:
-        await session.execute(text(f'TRUNCATE TABLE {model} CASCADE;'))
-        await session.commit()
+from app.main import app
 
 
 @pytest_asyncio.fixture(scope='session')
@@ -35,3 +29,16 @@ async def session(async_engine):
     await session.close()
     await transaction.rollback()
     await connection.close()
+
+
+@pytest_asyncio.fixture()
+async def client(session):
+    async def override_get_db():
+        yield session
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    async with AsyncClient(
+        transport=ASGITransport(app), base_url='http://localhost:8000/api/v1'
+    ) as client:
+        yield client
