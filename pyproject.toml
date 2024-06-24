@@ -19,6 +19,7 @@ dynaconf = "^3.2.5"
 alembic = "^1.13.1"
 argon2-cffi = "^23.1.0"
 pyjwt = "^2.8.0"
+email-validator = "^2.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
