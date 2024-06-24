@@ -13,8 +13,8 @@ def configure_exception_handlers(app: FastAPI):
 
     @app.exception_handler(SQLAlchemyError)
     async def db_exception_handler(_, exc):
-        log.exception(f'Database error occurred: {exc} : {type(exc)}')
-        return HTTPException(status_code=500, detail='Internal server error')
+        log.error(f'Database error occurred: {type(exc)}')
+        raise HTTPException(status_code=500, detail='Internal server error')
 
 
 """

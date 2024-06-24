@@ -10,7 +10,7 @@ from fastapi.security import OAuth2PasswordBearer
 from app.core import exc, log, settings
 from app.core.db.postgres import async_session
 
-auth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/token')
+auth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v1/auth/token')
 ALGORITHM = settings.security.algorithm
 SECRET = settings.secret_key
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.security.access_token_expire_minutes
@@ -137,4 +137,4 @@ async def get_db_user(user: Annotated[dict, Depends(get_current_user)]):
         if not db_user:
             raise exc.UnauthorizedException()
 
-    return user
+    return db_user
