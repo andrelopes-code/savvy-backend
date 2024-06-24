@@ -84,7 +84,7 @@ class SecurityService:
         try:
             data = jwt.decode(jwt=token, key=SECRET, algorithms=[ALGORITHM])
             return data
-        except jwt.DecodeError:
+        except (jwt.DecodeError, jwt.ExpiredSignatureError):
             raise exc.UnauthorizedException()
 
     @staticmethod
