@@ -169,6 +169,8 @@ def get_current_user(token: Annotated[str, Depends(auth2_scheme)]):
     """Dependency that gets the current user from the token or cookie"""
 
     user = SecurityService.verify_token(token)
+    if not user['type'] == 'access':
+        raise exc.UnauthorizedException('Invalid token type')
     return user
 
 
