@@ -44,7 +44,7 @@ class CustomOAuth2PasswordBearer(OAuth2):
         scheme, token = get_authorization_scheme_param(authorization)
         if not authorization or scheme.lower() != 'bearer':
             # If not found in headers, try in the Authorization header
-            token = request.cookies.get('accessToken')
+            token = request.cookies.get('access_token')
             if not token:
                 # If no token found, raise an exception
                 raise exc.UnauthorizedException('Not authenticated')
@@ -182,3 +182,12 @@ async def get_db_user(user: Annotated[dict, Depends(get_current_user)]):
             raise exc.UnauthorizedException()
 
     return db_user
+
+
+def get_refresh_token(request: Request) -> str:
+    """Get the refresh token from the request headers"""
+    authorization = request.headers.get('X-Refresh-Token')
+    scheme, token = get_authorization_scheme_param(authorization)
+    if not authorization or scheme.lower() != 'bearer':
+        raise exc.UnauthorizedException('No refresh token provided')
+    return token
