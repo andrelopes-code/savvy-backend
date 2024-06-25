@@ -25,6 +25,7 @@ class UserIn(BaseModel):
 
 
 class UserOut(BaseModel):
+    id: int
     name: UserFields.name
     email: UserFields.email
     created_at: datetime
