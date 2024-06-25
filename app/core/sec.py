@@ -1,16 +1,59 @@
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
+from typing import Annotated, Any, Optional, cast
 
 import jwt
 from argon2 import PasswordHasher
 from argon2 import exceptions as argon2_exceptions
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
+from fastapi.security.oauth2 import OAuth2
+from fastapi.security.utils import get_authorization_scheme_param
+from starlette.requests import Request
 
 from app.core import exc, log, settings
 from app.core.db.postgres import async_session
 
-auth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v1/auth/token')
+
+class CustomOAuth2PasswordBearer(OAuth2):
+    """Custom OAuth2 Password Bearer that looks for access token in
+    headers or cookies, and in that order. If not found, it will raise
+    an HTTPException with status code 401"""
+
+    def __init__(
+        self,
+        tokenUrl: str,
+        scheme_name: Optional[str] = None,
+        scopes: Optional[dict[str, str]] = None,
+        description: Optional[str] = None,
+    ):
+        if not scopes:
+            scopes = {}
+        flows = OAuthFlowsModel(
+            password=cast(Any, {'tokenUrl': tokenUrl, 'scopes': scopes})
+        )
+        super().__init__(
+            flows=flows,
+            scheme_name=scheme_name,
+            description=description,
+            auto_error=False,
+        )
+
+    async def __call__(self, request: Request) -> Optional[str]:
+        # Try to get access token from headers
+        authorization = request.headers.get('Authorization')
+        scheme, token = get_authorization_scheme_param(authorization)
+        if not authorization or scheme.lower() != 'bearer':
+            # If not found in headers, try in the Authorization header
+            token = request.cookies.get('accessToken')
+            if not token:
+                # If no token found, raise an exception
+                raise exc.UnauthorizedException('Not authenticated')
+        return token
+
+
+auth2_scheme = CustomOAuth2PasswordBearer(tokenUrl='/api/v1/auth/token')
+
+
 ALGORITHM = settings.security.algorithm
 SECRET = settings.secret_key
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.security.access_token_expire_minutes
@@ -123,7 +166,8 @@ class SecurityService:
 
 
 def get_current_user(token: Annotated[str, Depends(auth2_scheme)]):
-    """Dependency that gets the current user from the token"""
+    """Dependency that gets the current user from the token or cookie"""
+
     user = SecurityService.verify_token(token)
     return user
 
