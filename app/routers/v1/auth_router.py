@@ -25,6 +25,7 @@ async def login_user(
         return {
             'access_token': SecurityService.create_access_token(data),
             'refresh_token': SecurityService.create_refresh_token(data),
+            'token_type': 'Bearer',
         }
 
     raise exc.UnauthorizedException()

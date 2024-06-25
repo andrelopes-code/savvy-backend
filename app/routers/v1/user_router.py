@@ -10,7 +10,7 @@ from app.services.user_service import UserService
 router = APIRouter()
 
 
-@router.post('/users', response_model=UserOut)
+@router.post('/users', response_model=UserOut, status_code=201)
 async def create_user(session: AsyncDBSessionDepends, data: UserIn):
     user_service = UserService(session)
     return await user_service.create_user(data)
