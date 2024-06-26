@@ -35,7 +35,7 @@ async def login_user(
             'token_type': 'Bearer',
         }
 
-    raise exc.UnauthorizedException()
+    raise exc.UnauthorizedException('Invalid credentials')
 
 
 @router.post('/token/refresh')
