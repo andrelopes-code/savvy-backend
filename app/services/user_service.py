@@ -17,7 +17,7 @@ class UserService:
         # Check if email is already in use by another user
         if await self.email_in_use(user.email):
             raise exc.BadRequestException('Email already in use')
-
+        # Create the user and return it
         created_user = await self.repository.save(user)
         return created_user
 
@@ -27,18 +27,12 @@ class UserService:
         current_user: User,
         data: UserUpdate,
     ) -> User:
+        # Check if the current user is the one being updated
         if user_id != current_user.id:
             raise exc.UnauthorizedException('You cannot update this user')
-
+        # Update the user and return it
         updated_user = await self.repository.update(current_user, data)
         return updated_user
-
-    async def delete_user(self, user_id: int, current_user: User) -> User:
-        if user_id != current_user.id:
-            raise exc.UnauthorizedException('You cannot delete this user')
-
-        deleted_user = await self.repository.delete_by_id(user_id)
-        return deleted_user
 
     async def email_in_use(self, email: str) -> bool:
         """Check if an email is already in use

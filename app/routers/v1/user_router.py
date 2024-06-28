@@ -30,13 +30,3 @@ async def update_user(
 ):
     user_service = UserService(session)
     return await user_service.update_user(user_id, current_user, data)
-
-
-@router.delete('/users/{id}')
-async def delete_user(
-    user_id: int,
-    current_user: AuthenticatedDBUserDepends,
-    session: AsyncDBSessionDepends,
-):
-    user_service = UserService(session)
-    return await user_service.delete_user(user_id, current_user)
