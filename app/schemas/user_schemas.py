@@ -16,6 +16,7 @@ class UserFields:
             'and lowercase letter, and at least 8 or more characters',
         ),
     ]
+    categories_count = Annotated[int, ...]
 
 
 class UserIn(BaseModel):
@@ -30,6 +31,7 @@ class UserOut(BaseModel):
     email: UserFields.email
     created_at: datetime
     updated_at: datetime
+    categories_count: UserFields.categories_count
 
 
 class UserUpdate(BaseModel):
