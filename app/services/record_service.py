@@ -12,13 +12,12 @@ from app.schemas.record_schemas import RecordIn
 
 
 class RecordService:
-    def __init__(self, session: AsyncSession, user: User):
+    def __init__(self, session: AsyncSession, user: User) -> None:
         self.user = user
         self.session = session
         self.repository = RecordRepository(session)
 
     async def create_record(self, data: RecordIn) -> Record:
-        # Validate if category exists and can be used by the user
         category = await self._validate_category(data.category_id)
         # Create the record, attach the category and return it
         record = Record(**data.model_dump(), user_id=self.user.id)
@@ -45,13 +44,13 @@ class RecordService:
             .filter(Record.user_id == self.user.id)
         )
         if sort:
-            # Apply sorting if valid sort parameter is provided
             RecordService._apply_sorting_if_valid(stmt, sort)
         # Get all records for the user and return them
         records = await self.repository.get_all(stmt)
         return records
 
     async def _validate_category(self, category_id: int) -> Category:
+        # Check if the category exists and belongs to the user
         category_repository = CategoryRepository(self.session)
         category = await category_repository.get_by_id(category_id)
         if not category or category.user_id not in {None, self.user.id}:
@@ -62,6 +61,7 @@ class RecordService:
 
     @staticmethod
     def _apply_sorting_if_valid(stmt: select, sort: str) -> None:
+        """Apply sorting if valid sort parameter is provided"""
         match sort:
             case _:
                 stmt = stmt.order_by(Record.date.desc())

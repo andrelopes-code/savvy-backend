@@ -11,7 +11,10 @@ from app.core.db.postgres import (
     create_async_engine,
     get_db,
 )
+from app.core.sec import SecurityService
 from app.main import app
+from app.schemas.user_schemas import UserIn
+from app.services.user_service import UserService
 
 
 @pytest.fixture(scope='session')
@@ -42,6 +45,9 @@ async def session(async_engine):
 
         for table in tables:
             await session.execute(text(f'TRUNCATE TABLE {table} CASCADE;'))
+            await session.execute(
+                text(f'ALTER SEQUENCE {table}_id_seq RESTART WITH 1;')
+            )
             await session.commit()
 
     try:
@@ -64,3 +70,16 @@ async def client(session):
         transport=ASGITransport(app), base_url='http://localhost:8000/api/v1'
     ) as client:
         yield client
+
+
+@pytest_asyncio.fixture()
+async def authorization_header(session):
+    user_service = UserService(session)
+    user = await user_service.create_user(
+        UserIn(email='testuser@ex.com', name='User Name', password='Pass12345')
+    )
+    token = SecurityService.create_access_token({'sub': user.id})
+    return {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+    }
