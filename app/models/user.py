@@ -24,6 +24,7 @@ class User(Base):
         DateTime(True),
         default=datetime.now(timezone.utc),
     )
+    categories_count: Mapped[int] = mapped_column(Integer, default=0)
 
     @validates('password')
     def _validate(_, key, password):
