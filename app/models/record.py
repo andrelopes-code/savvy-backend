@@ -1,8 +1,7 @@
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import ForeignKey, Integer
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
@@ -13,6 +12,8 @@ class Record(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     amount: Mapped[int] = mapped_column(nullable=False, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
-    description: Mapped[Optional[str]] = mapped_column(nullable=True)
+    description: Mapped[str] = mapped_column(nullable=False)
     date: Mapped[datetime]
     category_id: Mapped[int] = mapped_column(ForeignKey('categories.id'))
+
+    category = relationship('Category')
