@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
 from app.core.dependencies import (
     AsyncDBSessionDepends,
@@ -24,7 +24,11 @@ async def get_user_records(
     return await record_service.get_user_records(sort=sort)
 
 
-@router.post('/records', response_model=RecordWithCategoryOut)
+@router.post(
+    '/records',
+    response_model=RecordWithCategoryOut,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_record(
     user: AuthenticatedDBUserDepends,
     session: AsyncDBSessionDepends,
@@ -34,7 +38,7 @@ async def create_record(
     return await record_service.create_record(data)
 
 
-@router.delete('/records', response_model=RecordOut)
+@router.delete('/records/{record_id}', response_model=RecordOut)
 async def delete_record(
     user: AuthenticatedDBUserDepends,
     session: AsyncDBSessionDepends,

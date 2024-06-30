@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
 from app.core.dependencies import (
     AsyncDBSessionDepends,
@@ -20,7 +20,11 @@ async def get_gategories(
     return await category_service.get_categories()
 
 
-@router.post('/categories', response_model=CategoryOut)
+@router.post(
+    '/categories',
+    response_model=CategoryOut,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_category(
     data: CategoryIn,
     session: AsyncDBSessionDepends,
