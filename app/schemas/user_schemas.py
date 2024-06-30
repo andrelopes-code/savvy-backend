@@ -7,7 +7,7 @@ from .custom_types import Password
 
 
 class UserFields:
-    name = Annotated[str, Field(max_length=255)]
+    name = Annotated[str, Field(max_length=20)]
     email = Annotated[EmailStr, ...]
     password = Annotated[
         Password,
